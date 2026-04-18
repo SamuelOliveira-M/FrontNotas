@@ -106,7 +106,7 @@ export default function SeePost ({color, favorite, id, media, title, text, date,
         };
 
         callback();
-    }, []);
+    }, [id]);
 
     const onEditingUpdated = useCallback(({ noteId, editors }: { noteId: NoteId, editors: Editors }) => {
         if (noteId === id) {

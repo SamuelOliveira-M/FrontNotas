@@ -1,11 +1,11 @@
 import { createContext, Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
 
-type UsernameContext = {
+type UsernameContextType = {
   username: string;
   setUsername: Dispatch<SetStateAction<string>>;
 };
 
-const UsernameContext = createContext<UsernameContext>({ username: "", setUsername: () => {} });
+const UsernameContext = createContext<UsernameContextType>({ username: "", setUsername: () => {} });
 
 export const useUsernameContext = () => useContext(UsernameContext);
 
