@@ -1,5 +1,11 @@
 # Teste Colab Frontend
-Aplicação que cria e manipula posts
+CollabPad — Bloco de Notas Colaborativo em Tempo Real
+
+CollabPad é uma aplicação web de bloco de notas interativo que permite a edição simultânea de documentos por múltiplos usuários em tempo real. O sistema foi desenvolvido com foco em colaboração, sincronização instantânea e alta performance na recuperação de informações.
+
+A aplicação possibilita que vários usuários criem, editem e visualizem notas compartilhadas de forma sincronizada, garantindo atualização automática do conteúdo entre todos os participantes conectados.
+
+Para otimizar a experiência de busca e organização dos conteúdos, o CollabPad integra o Elasticsearch, permitindo pesquisas rápidas e eficientes entre grandes volumes de blocos de notas. A indexação dos documentos possibilita consultas quase instantâneas, filtragem dinâmica e localização ágil de informações relevantes
 
 ## Pré-requisitos
 - [Node.js](https://nodejs.org/en)
