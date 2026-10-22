@@ -1,132 +1,55 @@
-# CollabPad — Bloco de Notas Colaborativo em Tempo Real
+# FrontNotas / CollabPad
 
-CollabPad é uma aplicação web de bloco de notas interativo que permite a edição simultânea de documentos por múltiplos usuários em tempo real. O sistema foi desenvolvido com foco em colaboração, sincronização instantânea e alta performance na recuperação de informações.
+Aplicação de notas colaborativas desenvolvida em equipe no ambiente MAMBEE/IFPI. O frontend permite criar, editar, favoritar, pesquisar e remover notas, com sincronização de dados por Firestore, integração Socket.IO e upload de mídias no Cloudinary.
 
-A aplicação possibilita que vários usuários criem, editem e visualizem notas compartilhadas de forma sincronizada, garantindo atualização automática do conteúdo entre todos os participantes conectados.
+**Contribuição individual de Samuel Oliveira:** implementação da busca de notas com Elasticsearch. As demais funcionalidades são trabalho da equipe; não são atribuídas integralmente a Samuel.
 
-Para otimizar a experiência de busca e organização dos conteúdos, o CollabPad integra o Elasticsearch, permitindo pesquisas rápidas e eficientes entre grandes volumes de blocos de notas. A indexação dos documentos possibilita consultas quase instantâneas, filtragem dinâmica e localização ágil de informações relevantes
+## Tecnologias verificadas
 
-## Pré-requisitos
-- [Node.js](https://nodejs.org/en)
-- IDE (Recomendamos [VsCode](https://code.visualstudio.com/))
+React 18, TypeScript, JavaScript, Create React App (`react-scripts`), Axios, Firebase/Firestore, Socket.IO Client, Sass e Cloudinary. Elasticsearch é acessado por um serviço HTTP externo, não diretamente pelo SDK no navegador.
 
-## Instalação
+## Estrutura
 
-
-Abrir pasta do projeto:
-```
-  cd  CORELAB-WEB-CHALLENGE
-```
-
-Instalar as dependências:
-```
-npm install
+```text
+src/components/menu/Menu.tsx   entrada do termo de busca
+src/pages/Posts/Posts.tsx      listagem, pesquisa e sincronização
+src/lib/elasticApi.ts          criação, leitura, atualização e remoção no índice
+src/lib/socket.ts             conexão Socket.IO
+src/lib/cloudinaryApi.ts      upload de mídia
+src/hooks/                    operações e escuta do Firestore
+src/api/firebaseConfig.ts     configuração web do Firebase
+src/constants.ts              endereços dos serviços HTTP e WebSocket
 ```
 
-Executar o projeto:
+## Fluxo da busca
+
+O menu atualiza `searchTerm` em `Posts.tsx`. Quando o termo não está vazio, a página chama `getNotas(searchTerm)`, que faz GET em `/documents/:titulo` no serviço de busca. A página combina os resultados do índice com documentos do Firestore pelo ID. Criação, alteração e remoção também tentam sincronizar o índice pelas funções de `elasticApi.ts`.
+
+O [Elastic-Cloud](https://github.com/SamuelOliveira-M/Elastic-Cloud) contém um serviço compatível com esse contrato. Ele indexa em `my-index` e pesquisa por título usando `match` com `fuzziness: AUTO`. Essa implementação não comprova ganho quantitativo de performance nem pesquisa em todos os campos.
+
+## Execução local
+
+```bash
+git clone https://github.com/SamuelOliveira-M/FrontNotas.git
+cd FrontNotas
+npm ci
+npm start
 ```
-npm run start
-```
 
-## Tecnologias utilizadas
-- [HTML](https://developer.mozilla.org/pt-BR/docs/Web/HTML) - Linguagem de Marcação de Hipertexto.
-- [CSS](https://developer.mozilla.org/pt-BR/docs/Web/CSS) - Linguagem de Estilização.
-- [Javascript](https://developer.mozilla.org/pt-BR/docs/Web/JavaScript) - Linguagem de programação.
-- [Typescript](https://www.typescriptlang.org/) - Linguagem de Programação.
-- [React](https://pt-br.react.dev/) - Biblioteca do javascript.
-- [Cloudinary](https://cloudinary.com/) - Armazena arquivo e retorna sua url.
+Copie `.env.local.example` para `.env.local`. No código auditado, `REACT_APP_WS_SERVER_URL` configura o serviço Socket.IO. `ELASTIC_SEARCH_URL` foi usada sem o prefixo exigido pelo Create React App, portanto a configuração personalizada de busca não é incorporada corretamente ao bundle. A correção recomendada é migrar código e exemplo juntos para `REACT_APP_ELASTIC_SEARCH_URL`.
 
-# Estrutura do Frontend
+A configuração web do Firebase está em `src/api/firebaseConfig.ts`; ela identifica o projeto cliente e não equivale a uma chave privada de conta de serviço. As regras do Firestore, domínios e restrições de uso precisam ser verificados no console. Cloudinary usa configuração de upload embutida em `src/lib/cloudinaryApi.ts`; revisar os limites do preset na origem. Nunca adicionar credenciais privadas ao bundle.
 
-1. **Pasta `assets`**:
-   - **Descrição**: Armazena imagens e arquivos estáticos utilizados na aplicação.
-   - **Conteúdo**:
-     - **Imagens e Arquivos**: Inclui todos os arquivos de imagem e outros arquivos estáticos necessários para o design e funcionalidade do frontend.
+Os serviços externos e os endereços históricos não foram acessados nem validados nesta auditoria. Para executar com segurança, usar projetos de desenvolvimento isolados. A documentação não oferece contas compartilhadas ou dados reais.
 
-2. **Pasta `components`**:
-   - **Descrição**: Contém todos os componentes reutilizáveis da aplicação.
-   - **Estrutura de cada componente**:
-     - **Arquivo `.tsx`**: Define a lógica e a estrutura JSX do componente. Inclui importações de dependências, definição de interfaces para props, e a função de renderização que retorna o JSX.
-     - **Arquivo `.scss`**: Contém a estilização específica do componente usando SASS. Inclui variáveis, mixins e estilos aplicados ao componente.
+## Qualidade e limitações verificadas
 
-   - **Componentes Detalhados**:
-     - **`Menu`**:
-       - **Descrição**: Inclui a logo, um campo de pesquisa e um botão de fechamento (X).
-       - **Funcionalidade dos Botões**:
-         - **Campo de Pesquisa**:
-           - **Ação**: O usuário digita um termo no campo de pesquisa.
-           - **Comportamento**: O texto digitado é armazenado em um estado local. Esse estado é passado para a página principal, onde filtra os posts com base no texto inserido. A filtragem verifica o título, descrição e cor dos posts. A cor é considerada apenas se o nome corresponder exatamente ao nome na lista de cores.
-           - **Motivo**: Facilitar a busca de posts específicos com base nas palavras-chave fornecidas pelo usuário.
-         - **Botão de Fechamento (X)**:
-           - **Ação**: O usuário clica no botão de fechamento.
-           - **Comportamento**: Limpa o texto do campo de pesquisa e redefine o estado associado na página principal, retornando à visualização completa dos posts.
-           - **Motivo**: Permitir ao usuário cancelar a pesquisa atual e visualizar todos os posts novamente.
+- `npm run build` existe; `npm test` utiliza a infraestrutura do CRA, mas não foram encontrados testes próprios no snapshot auditado. Não foram executados nesta revisão.
+- Adicionar debounce, cancelamento de pesquisas anteriores e tratamento de respostas fora de ordem.
+- `getNotas` deve codificar o termo no caminho e retornar uma coleção tipada, incluindo resultados vazios.
+- A sincronização Firestore/Elasticsearch não é transacional; criação não aguarda a indexação, podendo produzir divergências.
+- O serviço de busca não apresenta controle de autenticação/autorização e exige correção antes de uso público com dados de usuários.
+- O workflow atual envia a raiz do repositório ao GitHub Pages sem instalar dependências nem compilar React. Proposta: executar build e publicar somente `build/`, após aprovação explícita de deploy.
+- O manifesto contém uma dependência para o próprio projeto (`file:`), a revisar.
 
-     - **`Color`**:
-       - **Descrição**: Exibe uma esfera colorida.
-       - **Funcionalidade**:
-         - **Ação**: O usuário clica na esfera colorida.
-         - **Comportamento**: A cor da esfera é alterada e uma função de callback é chamada para modificar a cor exibida.
-         - **Motivo**: Permitir ao usuário selecionar e aplicar uma nova cor ao post ou ao elemento associado.
-
-     - **`Loading`**:
-       - **Descrição**: Mostra uma tela de carregamento enquanto os dados estão sendo processados.
-       - **Funcionalidade**:
-         - **Ação**: O componente é exibido durante operações de carregamento.
-         - **Comportamento**: Indica visualmente que a aplicação está processando ou carregando dados.
-         - **Motivo**: Informar ao usuário que o sistema está trabalhando e que a operação está em andamento.
-
-     - **`WarningMessage`**:
-       - **Descrição**: Exibe uma mensagem de confirmação para ações críticas, como deletar um post.
-       - **Funcionalidade**:
-         - **Ação**: O usuário clica para deletar um post.
-         - **Comportamento**:
-           - **Exibição do Aviso**: Uma mensagem de confirmação aparece, ativada por um estado booleano que indica a necessidade de confirmação.
-           - **Resposta do Usuário**:
-             - **Cancelar**: Desativa o estado de aviso, ocultando a mensagem e preservando o post.
-             - **Deletar**: O post selecionado é removido da lista. A função de deletar verifica se o post a ser excluído corresponde ao post visível no momento e, se assim for, remove o post específico.
-         - **Motivo**: Garantir que o usuário tenha a oportunidade de confirmar ou cancelar a exclusão de um post, evitando exclusões acidentais.
-
-     - **`CreatePost`**:
-       - **Descrição**: Permite a criação de um novo post.
-       - **Funcionalidade**:
-         - **Ação**: O usuário preenche os campos de título, descrição, e adiciona uma imagem ou PDF.
-         - **Comportamento**:
-           - **Adicionar Arquivo**: O arquivo pode ser arrastado para a área designada ou selecionado manualmente. Se for uma imagem ou PDF, o arquivo é enviado para o Cloudinary, que retorna uma URL pública. Essa URL e o ID do arquivo são armazenados.
-           - **Modificar Cor**: A cor do post pode ser alterada usando o componente `Color`.
-           - **Favoritar**: O post pode ser marcado como favorito.
-           - **Cancelar**: O usuário pode cancelar a criação do post, retornando ao estado inicial.
-         - **Motivo**: Permitir ao usuário criar e personalizar novos posts, com opções para adicionar conteúdo e modificar aspectos visuais.
-
-     - **`SeePost`**:
-       - **Descrição**: Permite visualizar e modificar um post existente.
-       - **Funcionalidade**:
-         - **Ação**: O usuário pode editar o post, alterar cor, adicionar ou remover arquivos.
-         - **Comportamento**:
-           - **Modo de Edição**: Ativado ao clicar no ícone de lápis. Exibe a interface de edição com opções para alterar título, descrição, cor e arquivos.
-           - **Alterar Dados**: As alterações são enviadas para a API, que só modifica os campos alterados, preservando os valores não modificados.
-           - **Adicionar/Remover Arquivos**: Arquivos podem ser adicionados ou removidos, e a visibilidade do botão de remoção é controlada pelo estado de edição.
-           - **Salvar Alterações**: O botão de confirmação salva as alterações feitas, enquanto o ícone de lápis alterna entre o modo de edição e visualização.
-         - **Motivo**: Permitir ao usuário atualizar posts existentes, facilitando a modificação de informações e a manutenção de conteúdo.
-
-3. **Pasta `hooks`**:
-   - **Descrição**: Contém hooks personalizados para interagir com a API e gerenciar estados específicos.
-   - **Conteúdo**:
-     - **Arquivos**:
-       - **Chamada de API**: Inclui funções para adicionar, deletar, modificar e buscar posts da API. Cada hook define como a API é chamada, incluindo as importações necessárias, interfaces para dados recebidos e retornados, e o tratamento de erros.
-
-4. **Pasta `lib`**:
-   - **Descrição**: Contém funções auxiliares para chamadas de API.
-   - **Conteúdo**:
-     - **API do Backend**: Configura a URL base da API e funções para interagir com o backend usando REST.
-     - **API do Cloudinary**: Configura a comunicação com o Cloudinary para upload de arquivos, incluindo imagens e PDFs. As funções retornam URLs públicas para os arquivos.
-
-5. **Pasta `page`**:
-   - **Descrição**: Contém a página principal e outras páginas da aplicação.
-   - **Conteúdo**:
-     - **Arquivo da Página**:
-       - **Funções**:
-         - **Exibição de Componentes**: Importa e exibe os componentes necessários.
-         - **Chamada de Dados**: Realiza uma chamada à API para obter posts já criados.
-         - **Filtragem e Pesquisa**: Verifica a existência de termos de pesquisa vindos do componente `Menu` e filtra os posts com base nisso.
-         - **Carrossel de Posts**: Implementa um carrossel para navegação entre posts, ajustando o número de posts visíveis com base no tamanho da tela. O controle de rotação é feito por imagens de seta e ajusta-se dinamicamente para telas grandes (três posts), médias (dois posts) e pequenas (um post).
+O README anterior prometia resultados de performance sem benchmark e trazia o nome de outra pasta no comando de instalação. Essas afirmações e instruções foram corrigidas. Contribuições dos demais integrantes são preservadas no histórico Git.
